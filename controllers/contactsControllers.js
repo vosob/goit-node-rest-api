@@ -4,6 +4,7 @@ import {
   listContacts,
   removeContact,
   updateById,
+  updateContactFavoriteStatus,
 } from "../services/contactsServices.js";
 import HttpError from "../helpers/HttpError.js";
 
@@ -64,6 +65,20 @@ export const updateContact = async (req, res, next) => {
       email: email || resultId.email,
       phone: phone || resultId.phone,
     });
+    if (!result) {
+      throw HttpError(404);
+    }
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateContactStatus = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const result = await updateContactFavoriteStatus(id, req.body);
+
     if (!result) {
       throw HttpError(404);
     }
