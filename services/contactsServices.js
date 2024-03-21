@@ -1,7 +1,9 @@
 import { Contact } from "../models/contactModel.js";
 
-async function listContacts() {
-  const data = await Contact.find();
+async function listContacts(limit = 10, page = 0, params = {}) {
+  const data = await Contact.find(params)
+    .limit(limit)
+    .skip(page * limit);
   return data;
 }
 
