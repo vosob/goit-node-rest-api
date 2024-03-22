@@ -28,9 +28,9 @@ contactsRouter.get(
   getAllContacts
 );
 
-contactsRouter.get("/:id", getOneContact);
+contactsRouter.get("/:id", auth, getOneContact);
 
-contactsRouter.delete("/:id", deleteContact);
+contactsRouter.delete("/:id", auth, deleteContact);
 
 contactsRouter.post(
   "/",
@@ -39,11 +39,17 @@ contactsRouter.post(
   createContact
 );
 
-contactsRouter.put("/:id", validateBody(updateContactSchema), updateContact);
+contactsRouter.put(
+  "/:id",
+  auth,
+  validateBody(updateContactSchema),
+  updateContact
+);
 
 contactsRouter.patch(
   "/:id/favorite",
   isValidObjId,
+  auth,
   validateBody(updateFavoriteSchema),
   updateContactStatus
 );
