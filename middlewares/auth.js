@@ -24,10 +24,6 @@ function auth(req, res, next) {
 
     const user = await User.findById(decode.id);
 
-    // if (user === null) {
-    //   return res.status(401).send({ message: "Invalid token 4" });
-    // }
-
     if (!user) {
       return res.status(401).send({ message: "Invalid token 4" });
     }
@@ -39,6 +35,7 @@ function auth(req, res, next) {
     req.user = {
       _id: decode.id,
       email: decode.email,
+      subscription: user.subscription,
     };
 
     // req.user = user;

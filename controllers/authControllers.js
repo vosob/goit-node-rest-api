@@ -14,20 +14,26 @@ async function register(req, res, next) {
   const normalizedEmail = user.email.toLowerCase();
 
   try {
-    const newUser = await User.findOne({ email: normalizedEmail });
-    if (newUser !== null) {
-      return res.status(409).send({ message: "User alredy registered" });
+    const existingUser = await User.findOne({ email: normalizedEmail });
+    if (existingUser !== null) {
+      return res.status(409).send({ message: "User already registered" });
     }
 
     const passwordHash = await bcrypt.hash(user.password, 10);
 
-    await User.create({
-      newUser,
+    const newUser = await User.create({
       email: normalizedEmail,
       password: passwordHash,
     });
 
-    res.status(201).send({ message: "Registration successfully" });
+    const result = {
+      user: {
+        email: newUser.email,
+        subscription: "starter",
+      },
+    };
+
+    res.status(201).json(result);
   } catch (error) {
     next(error);
   }
@@ -35,6 +41,7 @@ async function register(req, res, next) {
 
 async function login(req, res, next) {
   const { email, password } = req.body;
+
   const normalizedEmail = email.toLowerCase();
   try {
     const user = await User.findOne({ email: normalizedEmail });
@@ -66,7 +73,15 @@ async function login(req, res, next) {
 
     await User.findByIdAndUpdate(user.id, { token });
 
-    res.send({ token: token });
+    const result = {
+      token: token,
+      user: {
+        email: user.email,
+        subscription: user.subscription,
+      },
+    };
+
+    res.send(result);
   } catch (error) {
     next(error);
   }
@@ -83,9 +98,10 @@ async function logout(req, res, next) {
 }
 
 async function userInfo(req, res, next) {
-  const { id, email, subscription } = req.user;
+  const { id, email, subscription } = req.user ?? {};
+  console.log(req.user);
 
-  res.status(200).send({ email, id, subscription });
+  res.status(200).send({ email, subscription });
 }
 
 async function updateSubscription(req, res) {
