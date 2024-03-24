@@ -2,6 +2,7 @@ import * as Joi from "../schemas/usersSchemas.js";
 import { User } from "../models/user.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import gravatar from "gravatar";
 
 async function register(req, res, next) {
   const user = req.body;
@@ -18,18 +19,20 @@ async function register(req, res, next) {
     if (existingUser !== null) {
       return res.status(409).send({ message: "User already registered" });
     }
-
+    const avatarURL = gravatar.url(user.email);
     const passwordHash = await bcrypt.hash(user.password, 10);
 
     const newUser = await User.create({
       email: normalizedEmail,
       password: passwordHash,
+      avatarURL,
     });
 
     const result = {
       user: {
         email: newUser.email,
         subscription: "starter",
+        avatarURL: newUser.avatarURL,
       },
     };
 

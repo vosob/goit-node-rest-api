@@ -7,15 +7,17 @@ import "./db.js";
 import contactsRouter from "./routes/contactsRouter.js";
 import usersRouter from "./routes/usersRouter.js";
 import auth from "./middlewares/auth.js";
+import userAvatarRouter from "./routes/userAvatarRouter.js";
 
 const app = express();
 
 app.use(morgan("tiny"));
 app.use(cors());
 app.use(express.json());
+app.use(express.static("public"));
 
 app.use("/api/contacts", contactsRouter);
-app.use("/users", usersRouter);
+app.use("/users", usersRouter, userAvatarRouter);
 
 app.use((_, res) => {
   res.status(404).json({ message: "Route not found" });
