@@ -3,6 +3,17 @@ import { User } from "../models/user.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import gravatar from "gravatar";
+import nodemailer from "nodemailer";
+import crypto from "node:crypto";
+
+const transport = nodemailer.createTransport({
+  host: "sandbox.smtp.mailtrap.io",
+  port: 2525,
+  auth: {
+    user: process.env.MAILTRAP_USER,
+    pass: process.env.MAILTRAP_PASSWORD,
+  },
+});
 
 async function register(req, res, next) {
   const user = req.body;
@@ -21,9 +32,21 @@ async function register(req, res, next) {
     }
     const avatarURL = gravatar.url(user.email);
     const passwordHash = await bcrypt.hash(user.password, 10);
+    const verifyToken = crypto.randomUUID();
+
+    // sendEmail
+    await transport.sendMail({
+      to: user.email,
+      from: "osobskyi.vlad@gmail.com",
+      subject: "Welcome to your contacts",
+      html: `To confirm you registration please click on the <a href="http://localhost:3000/users/verify/${verifyToken}">link</a>`,
+      text: `To confirm you registration please open the link http://localhost:3000/users/verify/${verifyToken}`,
+    });
 
     const newUser = await User.create({
       email: normalizedEmail,
+      // verifyToken,
+      verificationToken: verifyToken,
       password: passwordHash,
       avatarURL,
     });
@@ -63,6 +86,10 @@ async function login(req, res, next) {
       return res
         .status(401)
         .send({ message: "Email or password is incorrect" });
+    }
+
+    if (user.verify === false) {
+      return res.status(401).send({ message: "Your account is not verified" });
     }
 
     const token = jwt.sign(
@@ -115,4 +142,59 @@ async function updateSubscription(req, res) {
   res.json({ subscription });
 }
 
-export default { register, login, logout, userInfo, updateSubscription };
+async function verify(req, res, next) {
+  const { verificationToken } = req.params;
+
+  try {
+    const user = await User.findOne({ verificationToken: verificationToken });
+
+    if (user === null) {
+      return res.status(404).send({ message: "Not found" });
+    }
+
+    await User.findByIdAndUpdate(user._id, {
+      verify: true,
+      verificationToken: null,
+    });
+    res.send({ message: "Email confirm succesfully" });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function resendVerify(req, res, next) {
+  const { email } = req.body;
+
+  try {
+    const user = await User.findOne({ email: email });
+
+    if (user === null) {
+      return res.status(404).send({ message: "Not found" });
+    }
+
+    if (user.verify) {
+      return res.status(401).send({ message: "Your account verified" });
+    }
+
+    await transport.sendMail({
+      to: user.email,
+      from: "osobskyi.vlad@gmail.com",
+      subject: "Welcome to your contacts",
+      html: `To confirm you registration please click on the <a href="http://localhost:3000/users/verify/${user.verificationToken}">link</a>`,
+      text: `To confirm you registration please open the link http://localhost:3000/users/verify/${user.verificationToken}`,
+    });
+    res.status(200).send({ message: "Verification email sent" });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export default {
+  register,
+  login,
+  logout,
+  userInfo,
+  updateSubscription,
+  verify,
+  resendVerify,
+};

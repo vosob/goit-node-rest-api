@@ -34,5 +34,7 @@ usersRouter.patch(
 
 usersRouter.post("/logout", auth, authController.logout);
 usersRouter.get("/current", auth, authController.userInfo);
+usersRouter.get("/verify/:verificationToken", authController.verify);
+usersRouter.post("/verify", authController.resendVerify);
 
 export default usersRouter;
