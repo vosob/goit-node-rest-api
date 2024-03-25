@@ -173,7 +173,7 @@ async function resendVerify(req, res, next) {
     }
 
     if (user.verify) {
-      return res.status(401).send({ message: "Your account verified" });
+      return res.status(400).send({ message: "Your account verified" });
     }
 
     await transport.sendMail({
